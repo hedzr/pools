@@ -1,6 +1,7 @@
 package connpool
 
 import (
+	"io"
 	"log"
 	"sync"
 	"time"
@@ -8,7 +9,8 @@ import (
 
 type (
 	Pool interface {
-		Close()
+		Close() error
+
 		Cap() int
 		Resize(newSize int)
 
@@ -18,11 +20,9 @@ type (
 		Free() (count int)
 	}
 
+	// Worker should be always have a io.Closer implementation if it wanna be disposed.
 	Worker interface {
-	}
-
-	Closable interface {
-		Close() error
+		// io.Closer
 	}
 
 	KeepAliveTicker interface {
@@ -30,12 +30,14 @@ type (
 	}
 
 	PoolOpt func(*poolZ)
+
+	Dialer func() (w Worker, err error)
 )
 
 type poolZ struct {
 	// locker sync.Mutex
 	// workers map[Worker]bool
-	dialer            func() Worker
+	dialer            Dialer
 	workers           sync.Map // key: Worker, val: bool
 	size              int
 	done              chan struct{}
@@ -43,15 +45,15 @@ type poolZ struct {
 	blockIfCantBorrow bool
 }
 
-func (p *poolZ) Close() {
+func (p *poolZ) Close() (err error) {
 	if p.done != nil {
 		close(p.done)
 		p.done = nil
 	}
 
 	p.workers.Range(func(key, value interface{}) bool {
-		if c, ok := key.(Closable); ok {
-			if err := c.Close(); err != nil {
+		if c, ok := key.(io.Closer); ok {
+			if err = c.Close(); err != nil {
 				log.Printf("close worker (%v) failed: %v", c, err)
 			}
 		}
@@ -59,6 +61,7 @@ func (p *poolZ) Close() {
 		p.size--
 		return true
 	})
+	return
 }
 
 func (p *poolZ) Cap() int {
@@ -77,14 +80,16 @@ func (p *poolZ) Resize(newSize int) {
 	}
 
 	for i := p.size; i < newSize; i++ {
-		p.workers.Store(p.dialer(), false)
+		if w, err := p.dialer(); err == nil {
+			p.workers.Store(w, false)
+		}
 	}
 	p.size = newSize
 }
 
 func (p *poolZ) Borrowed() (count int) {
 	p.workers.Range(func(key, value interface{}) bool {
-		if used, ok := value.(bool); ok && !used {
+		if used, ok := value.(bool); ok && used {
 			count++
 		}
 		return true
@@ -109,12 +114,18 @@ RetryBorrow:
 
 	if p.blockIfCantBorrow && ret == nil {
 		time.Sleep(30 * time.Nanosecond)
+		time.Sleep(30 * time.Millisecond)
 		goto RetryBorrow
 	}
 	return
 }
 
 func (p *poolZ) Return(t Worker) {
+	// if c, ok := t.(io.Closer); ok {
+	// 	if err := c.Close(); err != nil {
+	// 		log.Printf("close the closable worker failed: %v", err)
+	// 	}
+	// }
 	p.workers.Store(t, false)
 }
 
@@ -134,8 +145,10 @@ func (p *poolZ) run() {
 						p.workers.Delete(w)
 						p.size--
 						go func() {
-							p.workers.Store(p.dialer(), false)
-							p.size++
+							if w, err := p.dialer(); err == nil {
+								p.workers.Store(w, false)
+								p.size++
+							}
 						}()
 					}
 				}
@@ -147,7 +160,7 @@ func (p *poolZ) run() {
 	}
 }
 
-func WithWorkerDialer(dialer func() Worker) PoolOpt {
+func WithWorkerDialer(dialer Dialer) PoolOpt {
 	return func(z *poolZ) {
 		z.dialer = dialer
 	}
@@ -181,7 +194,9 @@ func New(size int, opts ...PoolOpt) Pool {
 
 	for i := 0; i < size; i++ {
 		if pool.dialer != nil {
-			pool.workers.Store(pool.dialer(), false)
+			if w, err := pool.dialer(); err == nil {
+				pool.workers.Store(w, false)
+			}
 		}
 	}
 
