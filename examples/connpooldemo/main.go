@@ -1,4 +1,6 @@
-package main
+// Copyright © 2019 Hedzr Yeh.
+
+package connpooldemo
 
 import (
 	"bufio"
@@ -18,8 +20,8 @@ import (
 
 // To test this example:
 // $ ulimit -n 20000
-// $ go run examples/main.go
-// $ go run examples/main.go -ping-time 2s -pool-size 500
+// $ go run examples/connpooldemo/main.go
+// $ go run examples/connpooldemo/main.go -ping-time 2s -pool-size 500
 
 const addr = ":1180"
 
