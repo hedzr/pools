@@ -107,7 +107,7 @@ build: compile
 build-linux:
 	@echo "  >  Building linux binary..."
 	@echo "  >  LDFLAGS = $(LDFLAGS)"
-	$(foreach an, fluent demo ffdemo short wget-demo, \
+	$(foreach an, connpooldemo, \
 	$(foreach os, linux, \
 	  echo "     Building $(GOBIN)/$(an)_$(os)_$(goarch)...$(os)"; \
 	    GOARCH="$(goarch)" GOOS="$(os)" \
@@ -141,7 +141,7 @@ build-nacl:
 build-ci:
 	@echo "  >  Building binaries in CI flow..."
 	@echo "  >  LDFLAGS = $(LDFLAGS)"
-	$(foreach an, fluent ffdemo demo short wget-demo, \
+	$(foreach an, connpooldemo, \
 	  echo "  >  APPNAME = $(APPNAME)|$(an)"; \
 	  $(foreach os, darwin linux windows, \
 	    echo "     Building $(GOBIN)/$(an)_$(os)_$(goarch)...$(os)"; \
@@ -186,7 +186,7 @@ run:
 go-build:
 	@echo "  >  Building binary '$(GOBIN)/$(APPNAME)'..."
 	# demo short wget-demo 
-	$(foreach an, fluent ffdemo demo issue2, \
+	$(foreach an, connpooldemo, \
 	  echo "  >  +race. APPNAME = $(APPNAME)|$(an), LDFLAGS = $(LDFLAGS)"; \
 	  GOPATH=$(GOPATH) GOBIN=$(GOBIN) GO111MODULE=$(GO111MODULE) GOPROXY=$(GOPROXY) \
 	    go build -v -race -ldflags "$(LDFLAGS) -X '$(W_PKG).AppName=$(an)'" -o $(GOBIN)/$(an) $(GOBASE)/examples/$(an)/main.go; \
