@@ -8,6 +8,7 @@ import (
 )
 
 type (
+	// Pool is a conn-pool
 	Pool interface {
 		Close() error
 
@@ -23,15 +24,19 @@ type (
 	// Worker should be always have a io.Closer implementation if it wanna be disposed.
 	Worker interface {
 		// io.Closer
+		// Dialer
 	}
 
+	// Dialer for a worker
+	Dialer func() (w Worker, err error)
+
+	// KeepAliveTicker will be ticked periodically by internal pool manager
 	KeepAliveTicker interface {
 		Tick(tick time.Time) (err error)
 	}
 
+	// PoolOpt for the functional options pattern
 	PoolOpt func(*poolZ)
-
-	Dialer func() (w Worker, err error)
 )
 
 type poolZ struct {
@@ -113,8 +118,8 @@ RetryBorrow:
 	})
 
 	if p.blockIfCantBorrow && ret == nil {
-		time.Sleep(30 * time.Nanosecond)
-		time.Sleep(30 * time.Millisecond)
+		// time.Sleep(31 * time.Nanosecond)
+		time.Sleep(37 * time.Millisecond)
 		goto RetryBorrow
 	}
 	return

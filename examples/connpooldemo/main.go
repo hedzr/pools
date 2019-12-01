@@ -1,6 +1,6 @@
 // Copyright © 2019 Hedzr Yeh.
 
-package connpooldemo
+package main
 
 import (
 	"bufio"
