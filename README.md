@@ -1,5 +1,12 @@
 # pools
 
+[![Build Status](https://travis-ci.org/hedzr/pools.svg?branch=master)](https://travis-ci.org/hedzr/pools)
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/hedzr/pools.svg?label=release)](https://github.com/hedzr/pools/releases)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/hedzr/pools) 
+<!-- [![Go Report Card](https://goreportcard.com/badge/github.com/hedzr/pools)](https://goreportcard.com/report/github.com/hedzr/pools)
+[![codecov](https://codecov.io/gh/hedzr/pools/branch/master/graph/badge.svg)](https://codecov.io/gh/hedzr/pools)
+-->
+
 The generic connection pool and task pool for Golang.
 
 ## Connection Pool
