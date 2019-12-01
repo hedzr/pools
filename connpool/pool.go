@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -44,7 +45,7 @@ type poolZ struct {
 	// workers map[Worker]bool
 	dialer            Dialer
 	workers           sync.Map // key: Worker, val: bool
-	size              int
+	sizeA             int32
 	done              chan struct{}
 	keepAliveInterval time.Duration
 	blockIfCantBorrow bool
@@ -63,47 +64,52 @@ func (p *poolZ) Close() (err error) {
 			}
 		}
 		p.workers.Delete(key)
-		p.size--
+		atomic.AddInt32(&p.sizeA, -1)
 		return true
 	})
 	return
 }
 
-func (p *poolZ) Cap() int {
-	return p.size
+func (p *poolZ) Cap() (count int32) {
+	count = atomic.LoadInt32(&p.sizeA)
+	return
 }
 
-func (p *poolZ) Resize(newSize int) {
-	if newSize == p.size {
+func (p *poolZ) Resize(newSize int32) {
+	count := atomic.LoadInt32(&p.sizeA)
+	if newSize == count {
 		return
 	}
 	if newSize <= 0 {
 		return
 	}
-	if newSize < p.size {
-		return
+	if newSize < count {
+		return // todo decrease the pool
 	}
 
-	for i := p.size; i < newSize; i++ {
+	for i := count; i < newSize; i++ {
 		if w, err := p.dialer(); err == nil {
 			p.workers.Store(w, false)
+			atomic.AddInt32(&p.sizeA, 1)
 		}
 	}
-	p.size = newSize
 }
 
-func (p *poolZ) Borrowed() (count int) {
-	p.workers.Range(func(key, value interface{}) bool {
-		if used, ok := value.(bool); ok && used {
-			count++
-		}
-		return true
-	})
+func (p *poolZ) Borrowed() (count int32) {
+	// p.workers.Range(func(key, value interface{}) bool {
+	// 	if used, ok := value.(bool); ok && used {
+	// 		count++
+	// 	}
+	// 	return true
+	// })
+	count = atomic.LoadInt32(&p.sizeA)
 	return
 }
 
-func (p *poolZ) Free() (count int) {
-	return p.size - p.Borrowed()
+func (p *poolZ) Free() (count int32) {
+	count = atomic.LoadInt32(&p.sizeA)
+	count -= p.Borrowed()
+	return
 }
 
 func (p *poolZ) Borrow() (ret Worker) {
@@ -148,11 +154,11 @@ func (p *poolZ) run() {
 					if err := w.Tick(tick); err != nil {
 						log.Printf("keep-alive tick on worker (%v) failed: %v", w, err)
 						p.workers.Delete(w)
-						p.size--
+						atomic.AddInt32(&p.sizeA, -1)
 						go func() {
 							if w, err := p.dialer(); err == nil {
 								p.workers.Store(w, false)
-								p.size++
+								atomic.AddInt32(&p.sizeA, 1)
 							}
 						}()
 					}
