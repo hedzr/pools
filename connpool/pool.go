@@ -13,13 +13,13 @@ type (
 	Pool interface {
 		Close() error
 
-		Cap() int
-		Resize(newSize int)
+		Cap() int32
+		Resize(newSize int32)
 
 		Borrow() Worker
 		Return(Worker)
-		Borrowed() (count int)
-		Free() (count int)
+		Borrowed() (count int32)
+		Free() (count int32)
 	}
 
 	// Worker should be always have a io.Closer implementation if it wanna be disposed.
@@ -45,7 +45,7 @@ type poolZ struct {
 	// workers map[Worker]bool
 	dialer            Dialer
 	workers           sync.Map // key: Worker, val: bool
-	sizeA             int32
+	size              int32
 	done              chan struct{}
 	keepAliveInterval time.Duration
 	blockIfCantBorrow bool
@@ -64,19 +64,19 @@ func (p *poolZ) Close() (err error) {
 			}
 		}
 		p.workers.Delete(key)
-		atomic.AddInt32(&p.sizeA, -1)
+		atomic.AddInt32(&p.size, -1)
 		return true
 	})
 	return
 }
 
 func (p *poolZ) Cap() (count int32) {
-	count = atomic.LoadInt32(&p.sizeA)
+	count = atomic.LoadInt32(&p.size)
 	return
 }
 
 func (p *poolZ) Resize(newSize int32) {
-	count := atomic.LoadInt32(&p.sizeA)
+	count := atomic.LoadInt32(&p.size)
 	if newSize == count {
 		return
 	}
@@ -90,7 +90,7 @@ func (p *poolZ) Resize(newSize int32) {
 	for i := count; i < newSize; i++ {
 		if w, err := p.dialer(); err == nil {
 			p.workers.Store(w, false)
-			atomic.AddInt32(&p.sizeA, 1)
+			atomic.AddInt32(&p.size, 1)
 		}
 	}
 }
@@ -102,12 +102,12 @@ func (p *poolZ) Borrowed() (count int32) {
 	// 	}
 	// 	return true
 	// })
-	count = atomic.LoadInt32(&p.sizeA)
+	count = atomic.LoadInt32(&p.size)
 	return
 }
 
 func (p *poolZ) Free() (count int32) {
-	count = atomic.LoadInt32(&p.sizeA)
+	count = atomic.LoadInt32(&p.size)
 	count -= p.Borrowed()
 	return
 }
@@ -154,11 +154,11 @@ func (p *poolZ) run() {
 					if err := w.Tick(tick); err != nil {
 						log.Printf("keep-alive tick on worker (%v) failed: %v", w, err)
 						p.workers.Delete(w)
-						atomic.AddInt32(&p.sizeA, -1)
+						atomic.AddInt32(&p.size, -1)
 						go func() {
 							if w, err := p.dialer(); err == nil {
 								p.workers.Store(w, false)
-								atomic.AddInt32(&p.sizeA, 1)
+								atomic.AddInt32(&p.size, 1)
 							}
 						}()
 					}
