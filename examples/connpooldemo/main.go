@@ -116,6 +116,7 @@ func (s *serverImpl) run() {
 		}
 		fmt.Printf("Accepted connection %s -> %s \n", conn.RemoteAddr(), conn.LocalAddr())
 
+		// todo use fixed-pool to limit the high-bound of goroutines
 		go s.handleRequest(conn, time.Now().UTC(), s.done)
 	}
 }
