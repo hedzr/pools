@@ -41,11 +41,12 @@ type (
 )
 
 type poolZ struct {
+	// todo deprecate sync.Map and use locker and map to synchronize both the map and capacity fields.
 	// locker sync.Mutex
 	// workers map[Worker]bool
 	dialer            Dialer
 	workers           sync.Map // key: Worker, val: bool
-	size              int32
+	capacity          int32
 	done              chan struct{}
 	keepAliveInterval time.Duration
 	blockIfCantBorrow bool
@@ -64,19 +65,19 @@ func (p *poolZ) Close() (err error) {
 			}
 		}
 		p.workers.Delete(key)
-		atomic.AddInt32(&p.size, -1)
+		atomic.AddInt32(&p.capacity, -1)
 		return true
 	})
 	return
 }
 
 func (p *poolZ) Cap() (count int32) {
-	count = atomic.LoadInt32(&p.size)
+	count = atomic.LoadInt32(&p.capacity)
 	return
 }
 
 func (p *poolZ) Resize(newSize int32) {
-	count := atomic.LoadInt32(&p.size)
+	count := atomic.LoadInt32(&p.capacity)
 	if newSize == count {
 		return
 	}
@@ -90,7 +91,7 @@ func (p *poolZ) Resize(newSize int32) {
 	for i := count; i < newSize; i++ {
 		if w, err := p.dialer(); err == nil {
 			p.workers.Store(w, false)
-			atomic.AddInt32(&p.size, 1)
+			atomic.AddInt32(&p.capacity, 1)
 		}
 	}
 }
@@ -102,12 +103,12 @@ func (p *poolZ) Borrowed() (count int32) {
 	// 	}
 	// 	return true
 	// })
-	count = atomic.LoadInt32(&p.size)
+	count = atomic.LoadInt32(&p.capacity)
 	return
 }
 
 func (p *poolZ) Free() (count int32) {
-	count = atomic.LoadInt32(&p.size)
+	count = atomic.LoadInt32(&p.capacity)
 	count -= p.Borrowed()
 	return
 }
@@ -154,11 +155,11 @@ func (p *poolZ) run() {
 					if err := w.Tick(tick); err != nil {
 						log.Printf("keep-alive tick on worker (%v) failed: %v", w, err)
 						p.workers.Delete(w)
-						atomic.AddInt32(&p.size, -1)
+						atomic.AddInt32(&p.capacity, -1)
 						go func() {
 							if w, err := p.dialer(); err == nil {
 								p.workers.Store(w, false)
-								atomic.AddInt32(&p.size, 1)
+								atomic.AddInt32(&p.capacity, 1)
 							}
 						}()
 					}
@@ -191,8 +192,8 @@ func WithBlockIfCantBorrow(b bool) PoolOpt {
 
 func New(size int, opts ...PoolOpt) Pool {
 	pool := &poolZ{
-		size: size,
-		done: make(chan struct{}),
+		capacity: size,
+		done:     make(chan struct{}),
 	}
 
 	for _, opt := range opts {
