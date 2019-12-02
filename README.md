@@ -94,9 +94,25 @@ But also `WithBlockIfCantBorrow(true)` can block at `Borrow()` till any connecti
 
 
 
-## Task pool
+## Jobs Scheduler - 'jobs/Scheduler'
 
-TODO
+TODO, WIP
+
+### import
+
+```go
+import (
+  "github.com/hedzr/pools/jobs"
+)
+```
+
+For more information pls refer to [examples/jobsdemo/main.go](https://github.com/hedzr/pools/blob/master/examples/jobsdemo/main.go) (not yet):
+
+```go
+
+
+```
+
 
 ## LICENSE
 
