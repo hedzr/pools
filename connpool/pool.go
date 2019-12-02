@@ -48,14 +48,15 @@ type poolZ struct {
 	workers           sync.Map // key: Worker, val: bool
 	capacity          int32
 	done              chan struct{}
+	exited            int32
 	keepAliveInterval time.Duration
 	blockIfCantBorrow bool
 }
 
 func (p *poolZ) Close() (err error) {
-	if p.done != nil {
+	if atomic.LoadInt32(&p.exited) == 0 {
+		atomic.AddInt32(&p.exited, 1)
 		close(p.done)
-		p.done = nil
 	}
 
 	p.workers.Range(func(key, value interface{}) bool {
@@ -68,6 +69,7 @@ func (p *poolZ) Close() (err error) {
 		atomic.AddInt32(&p.capacity, -1)
 		return true
 	})
+
 	return
 }
 
@@ -97,13 +99,13 @@ func (p *poolZ) Resize(newSize int32) {
 }
 
 func (p *poolZ) Borrowed() (count int32) {
-	// p.workers.Range(func(key, value interface{}) bool {
-	// 	if used, ok := value.(bool); ok && used {
-	// 		count++
-	// 	}
-	// 	return true
-	// })
-	count = atomic.LoadInt32(&p.capacity)
+	p.workers.Range(func(key, value interface{}) bool {
+		if used, ok := value.(bool); ok && used {
+			count++
+		}
+		return true
+	})
+	// count = atomic.LoadInt32(&p.capacity)
 	return
 }
 
@@ -170,49 +172,4 @@ func (p *poolZ) run() {
 			return
 		}
 	}
-}
-
-func WithWorkerDialer(dialer Dialer) PoolOpt {
-	return func(z *poolZ) {
-		z.dialer = dialer
-	}
-}
-
-func WithKeepAliveInterval(d time.Duration) PoolOpt {
-	return func(z *poolZ) {
-		z.keepAliveInterval = d
-	}
-}
-
-func WithBlockIfCantBorrow(b bool) PoolOpt {
-	return func(z *poolZ) {
-		z.blockIfCantBorrow = b
-	}
-}
-
-func New(size int, opts ...PoolOpt) Pool {
-	pool := &poolZ{
-		capacity: size,
-		done:     make(chan struct{}),
-	}
-
-	for _, opt := range opts {
-		opt(pool)
-	}
-
-	if pool.keepAliveInterval == 0 {
-		pool.keepAliveInterval = 120 * time.Second
-	}
-
-	for i := 0; i < size; i++ {
-		if pool.dialer != nil {
-			if w, err := pool.dialer(); err == nil {
-				pool.workers.Store(w, false)
-			}
-		}
-	}
-
-	go pool.run()
-
-	return pool
 }
