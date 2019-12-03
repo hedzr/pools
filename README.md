@@ -37,7 +37,7 @@ For more information pls refer to [examples/connpooldemo/main.go](https://github
 	)
 	defer pool.Close()
 
-    for i:=0; i<10; i++ {
+    for i := 0; i < 10; i++ {
         if c,ok:=pool.Borrow().(*clientSample); ok {
             c.LongOper()
         }

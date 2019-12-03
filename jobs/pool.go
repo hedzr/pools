@@ -15,7 +15,7 @@ type (
 		// states, waits for all jobs ended, and waits for all
 		// workers terminated.
 		Close() (err error)
-		// CloseAndWait is a Close() and waiting for all workers terminated.
+		// CloseAndWait is a synonym of Close()
 		CloseAndWait()
 
 		// Cap returns the capacity of workers pool
