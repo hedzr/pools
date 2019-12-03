@@ -98,6 +98,9 @@ func (p *poolZ) Resize(newSize int32) {
 	}
 }
 
+// Borrowed catches a count of those busy workers.
+// Borrowed does traverse the whole list to find out
+// which workers are busy. It's a slower-speed implementation
 func (p *poolZ) Borrowed() (count int32) {
 	p.workers.Range(func(key, value interface{}) bool {
 		if used, ok := value.(bool); ok && used {

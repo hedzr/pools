@@ -5,7 +5,7 @@ package connpool
 import "time"
 
 // New new a connection-pool object for you.
-// Note that always close this returned pool when you need not it.
+// Note that always close this returned pool once you don't need it.
 //
 //    pool := connpool.New(10)
 //    defer pool.Close()
