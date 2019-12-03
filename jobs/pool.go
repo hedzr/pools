@@ -26,9 +26,9 @@ type (
 		Resume()
 
 		// Schedule puts a job into a internal queue to wait for a worker ready to load it.
-		Schedule(job Job, args ...interface{})
+		Schedule(job JobIndexed, args ...interface{})
 		// Schedule puts a job 'copies' copies into a internal queue to wait for a worker ready to load it.
-		ScheduleN(job Job, copies int, args ...interface{})
+		ScheduleN(job JobIndexed, copies int, args ...interface{})
 
 		// WaitForAllJobs waits for all scheduled jobs done
 		WaitForAllJobs()
@@ -37,12 +37,22 @@ type (
 	// Worker is worker,
 	xWorker interface {
 		Close() error
-		Put(job Job, onEnd OnEndFunc, args ...interface{})
+		// Put(job Job, onEnd OnEndFunc, args ...interface{})
+	}
+
+	// SimpleJob is job
+	SimpleJob interface {
+		Run(args ...interface{})
 	}
 
 	// Job is job
 	Job interface {
-		Run(workerIndex int, args ...interface{}) (res Result, err error)
+		Run(args ...interface{}) (res Result, err error)
+	}
+
+	// JobIndexed is job
+	JobIndexed interface {
+		Run(workerIndex, subIndex int, args ...interface{}) (res Result, err error)
 	}
 
 	// Result is result
@@ -50,11 +60,20 @@ type (
 	}
 
 	// OnEndFunc is a callback that would be invoked on each job ending
-	OnEndFunc func(result Result, err error, job Job, args ...interface{})
+	OnEndFunc func(result Result, err error, job JobIndexed, args ...interface{})
 
 	// Opt is for new scheduler entry
 	Opt func(pool Scheduler)
 )
+
+// WrapSimpleJob wrap a SimpleJob object as a JobIndexed
+func WrapSimpleJob(job SimpleJob) JobIndexed {
+	return &sjobIndexed{job}
+}
+
+func WrapJob(job Job) JobIndexed {
+	return &jobIndexed{job}
+}
 
 // WithOnEndCallback sets the OnEndFunc callback for jobs.Pool
 func WithOnEndCallback(onEnd OnEndFunc) Opt {
@@ -167,20 +186,28 @@ func (p *poolZ) Pause() {
 func (p *poolZ) Resume() {
 }
 
-func (p *poolZ) Schedule(job Job, args ...interface{}) {
+func (p *poolZ) Schedule(job JobIndexed, args ...interface{}) {
 	if atomic.LoadInt32(&p.exited) == 0 {
-		p.jobCh <- &jobTaskBlock{job: job, args: args, onEnd: func(result Result, err error, jobSrc Job, argsSrc ...interface{}) {
-			p.wgForJobs.Done()
-			if p.onEnd != nil {
-				p.onEnd(result, err, jobSrc, argsSrc...)
-			}
-			return
-		}}
+		p.jobCh <- &jobTaskBlock{job: job, subIndex: 0, args: args, onEnd: p.doOnEnd}
 		p.wgForJobs.Add(1)
 	}
 }
 
-func (p *poolZ) ScheduleN(job Job, copies int, args ...interface{}) {
+func (p *poolZ) ScheduleN(job JobIndexed, copies int, args ...interface{}) {
+	if atomic.LoadInt32(&p.exited) == 0 {
+		for i := 0; i < copies; i++ {
+			p.jobCh <- &jobTaskBlock{job: job, subIndex: i, args: args, onEnd: p.doOnEnd}
+		}
+		p.wgForJobs.Add(copies)
+	}
+}
+
+func (p *poolZ) doOnEnd(result Result, err error, jobSrc JobIndexed, argsSrc ...interface{}) {
+	p.wgForJobs.Done()
+	if p.onEnd != nil {
+		p.onEnd(result, err, jobSrc, argsSrc...)
+	}
+	return
 }
 
 func (p *poolZ) WaitForAllJobs() {

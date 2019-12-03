@@ -11,7 +11,7 @@ import (
 )
 
 func TestPool(t *testing.T) {
-	pool := jobs.New(30, jobs.WithOnEndCallback(func(result jobs.Result, err error, job jobs.Job, args ...interface{}) {
+	pool := jobs.New(30, jobs.WithOnEndCallback(func(result jobs.Result, err error, job jobs.JobIndexed, args ...interface{}) {
 		return
 	}))
 	defer pool.CloseAndWait()
@@ -29,11 +29,11 @@ func TestPool(t *testing.T) {
 	pool.WaitForAllJobs()
 }
 
-func newJob(i int) jobs.Job {
+func newJob(i int) jobs.JobIndexed {
 	return &job1{taskIndex: i}
 }
 
-func newJob2(i, si int) jobs.Job {
+func newJob2(i, si int) jobs.JobIndexed {
 	return &job1{taskIndex: i, taskSubIndex: si}
 }
 
@@ -42,7 +42,7 @@ type job1 struct {
 	taskSubIndex int
 }
 
-func (j *job1) Run(workerIndex int, args ...interface{}) (res jobs.Result, err error) {
+func (j *job1) Run(workerIndex, subIndex int, args ...interface{}) (res jobs.Result, err error) {
 	fmt.Printf("Task #%v [worker #%v]: args = %v\n", j.taskIndex, workerIndex, args)
 	time.Sleep(time.Duration(2+rand.Intn(2)) * time.Second)
 	return
