@@ -9,6 +9,14 @@
 
 The generic connection pool and task pool for Golang.
 
+## Overview
+
+- WIP, v1.1.0, the first final release
+  - [conn-pool](#connection-pool)
+  - [jobs *Scheduler*](#jobs-scheduler)
+- v1.0.x preview versions
+- v0.9.x pre-released
+
 ## Connection Pool
 
 ### import
@@ -95,7 +103,9 @@ But also `WithBlockIfCantBorrow(true)` can block at `Borrow()` till any connecti
 
 
 
-## Jobs Scheduler - 'jobs/Scheduler'
+## Jobs Scheduler
+
+- *'jobs/Scheduler'*
 
 TODO, WIP
 
