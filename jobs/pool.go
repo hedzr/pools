@@ -157,8 +157,7 @@ func (p *poolZ) Close() (err error) {
 }
 
 func (p *poolZ) close() (err error) {
-	if atomic.LoadInt32(&p.exited) == 0 {
-		atomic.AddInt32(&p.exited, 1)
+	if atomic.CompareAndSwapInt32(&r.exited, 0, 1) {
 		close(p.done)
 
 		p.WaitForAllJobs()

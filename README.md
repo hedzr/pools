@@ -165,7 +165,7 @@ func (j *job1) Run(workerIndex int, args ...interface{}) (res jobs.Result, err e
 
 ### 3. Work-pool
 
-Work-pool is just like jobs scehduler but using a generator to feed the tasks.
+Work-pool is just like jobs scheduler but using a generator to feed the tasks.
 For example:
 
 ```go
