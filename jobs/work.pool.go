@@ -72,7 +72,19 @@ func (p *workPool) OnComplete(onComplete func(numProcessed int)) WorkPool {
 //     	return ch
 //     }
 //
+// For a hub object, you can return the hub's sending channel via a functional generator too.
 //
+//    type hub struct {
+//      sendCh chan *myTask
+//    }
+//    //
+//    // hub's runlooper...
+//    //
+//
+//    generator := func(args ...interface{}) chan *jobs.Task {
+//        h:=&hub{...}
+//        return h.sendCh
+//    }
 func (p *workPool) Run(generator func(args ...interface{}) chan *Task, args ...interface{}) {
 	items := p.getDefaultPrepareFunctor(generator, args...)(p.done)
 
