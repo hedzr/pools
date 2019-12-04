@@ -17,9 +17,10 @@ The generic connection pool and task pool for Golang.
 - v1.0.x preview versions
 - v0.9.x pre-released
 
-## Connection Pool
+## Pools
+### 1. Connection Pool
 
-### import
+#### import
 
 ```go
 import (
@@ -44,7 +45,7 @@ For more information pls refer to [examples/connpooldemo/main.go](https://github
     }
 ```
 
-### `connpool.Dialer`
+#### `connpool.Dialer`
 
 A `Dialer` function feed to pool make it can be initialized implicitly.
 
@@ -78,7 +79,7 @@ func newWorkerWithOpts(opts ...ClientSampleOpt) connpool.Dialer {
 ```
 
 
-### `connpool.KeepAliveTicker`
+#### `connpool.KeepAliveTicker`
 
 To keep the connection alive, your worker could implement `connpool.KeepAliveTicker` interface.
 
@@ -94,7 +95,7 @@ func (c *clientSample) Tick(tick time.Time) (err error) {
 ```
 
 
-### `WithBlockIfCantBorrow(b)`
+#### `WithBlockIfCantBorrow(b)`
 
 Generally the pool might return nil for `Borrow()` if all connections were borrowed.
 
@@ -103,13 +104,13 @@ But also `WithBlockIfCantBorrow(true)` can block at `Borrow()` till any connecti
 
 
 
-## Jobs Scheduler
+### 2. Jobs Scheduler
 
 - *'jobs/Scheduler'*
 
 TODO, WIP
 
-### import
+#### import
 
 ```go
 import (
@@ -160,6 +161,41 @@ func (j *job1) Run(workerIndex int, args ...interface{}) (res jobs.Result, err e
 }
 
 ```
+
+
+### 3. Work-pool
+
+Work-pool is just like jobs scehduler but using a generator to feed the tasks.
+For example:
+
+```go
+
+func testWorkPool() {
+	pool := jobs.NewWorkPool(10)
+	defer pool.Wait()
+	
+	generator := func(args ...interface{}) chan *jobs.Task {
+		ch := make(chan *jobs.Task)
+		count := args[0].(int)
+		go func() {
+			for i := 0; i < count; i++ {
+				job := newJob(i)
+				fmt.Printf("   -> new job #%d put\n", i)
+				ch <- jobs.ToTask(job, i+1, i+2, i+3)
+			}
+			close(ch)
+		}()
+		return ch
+	}
+
+	pool.OnComplete(func(numProcessed int) {
+		fmt.Printf("processed %d tasks\n", numProcessed)
+	}).Run(generator, 30)
+}
+
+```
+
+
 
 
 ## LICENSE
