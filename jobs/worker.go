@@ -24,6 +24,12 @@ type jobTaskBlock struct {
 	onEnd    OnEndFunc
 }
 
+type jobResultBlock struct {
+	jobTaskBlock
+	result Result
+	err    error
+}
+
 func newWorker(i int, wg *sync.WaitGroup, jobCh chan *jobTaskBlock) *workerZ {
 	w := &workerZ{
 		workerIndex: i,
