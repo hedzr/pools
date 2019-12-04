@@ -34,7 +34,7 @@ type (
 		WaitForAllJobs()
 	}
 
-	// Worker is worker,
+	// xWorker is worker,
 	xWorker interface {
 		Close() error
 		// Put(job Job, onEnd OnEndFunc, args ...interface{})
@@ -66,11 +66,12 @@ type (
 	Opt func(pool Scheduler)
 )
 
-// WrapSimpleJob wrap a SimpleJob object as a JobIndexed
+// WrapSimpleJob wraps a SimpleJob object to a JobIndexed
 func WrapSimpleJob(job SimpleJob) JobIndexed {
 	return &sjobIndexed{job}
 }
 
+// WrapJob wraps a Job object to a JobIndexed
 func WrapJob(job Job) JobIndexed {
 	return &jobIndexed{job}
 }

@@ -4,6 +4,7 @@ package exterr
 
 import "bytes"
 
+// New ExtErr error object with message and nested errors
 func New(msg string, errors ...error) error {
 	return add(msg, errors...)
 }
@@ -22,6 +23,7 @@ func add(msg string, errs ...error) error {
 	return add(msg, errs[1:]...)
 }
 
+// NewError ExtErr error object with nested errors
 func NewError(errors ...error) error {
 	return addE(errors...)
 }
@@ -40,6 +42,7 @@ func addE(errs ...error) error {
 	return addE(errs[1:]...)
 }
 
+// ExtErr is a nestable error object
 type ExtErr struct {
 	innerEE  *ExtErr
 	innerErr error

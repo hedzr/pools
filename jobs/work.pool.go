@@ -7,12 +7,17 @@ import (
 )
 
 type (
+	// WorkPool is a work-pool with channel fan-out pattern
 	WorkPool interface {
-		//
+		OnComplete(onComplete func(numProcessed int)) WorkPool
+		Run(generator func(args ...interface{}) chan *Task, args ...interface{})
 	}
+
+	// WorkPoolOpt for WorkPool
 	WorkPoolOpt func(p WorkPool)
 )
 
+// NewWorkPool new a work-pool object
 func NewWorkPool(size int, opts ...WorkPoolOpt) *workPool {
 	return newWorkPool(size, opts...)
 }
@@ -42,11 +47,32 @@ func newWorkPool(size int, opts ...WorkPoolOpt) *workPool {
 	return p
 }
 
-func (p *workPool) OnComplete(onComplete func(numProcessed int)) *workPool {
+// OnComplete will be invoked after the end of all tasks
+func (p *workPool) OnComplete(onComplete func(numProcessed int)) WorkPool {
 	p.onComplete = onComplete
 	return p
 }
 
+// Run starts a group of tasks with optional arguments.
+// 'generator' will supply all the new tasks via a channel of *Task.
+//
+// A sample generator:
+//
+//     generator := func(args ...interface{}) chan *jobs.Task {
+//     	ch := make(chan *jobs.Task)
+//     	count := args[0].(int)
+//     	go func() {
+//     		for i := 0; i < count; i++ {
+//     			job := newJob(i)
+//     			fmt.Printf("   -> new job #%d put\n", i)
+//     			ch <- jobs.ToTask(job, i+1, i+2, i+3)
+//     		}
+//     		close(ch)
+//     	}()
+//     	return ch
+//     }
+//
+//
 func (p *workPool) Run(generator func(args ...interface{}) chan *Task, args ...interface{}) {
 	items := p.getDefaultPrepareFunctor(generator, args...)(p.done)
 
@@ -111,6 +137,7 @@ func (p *workPool) getDefaultPrepareFunctor(generator func(args ...interface{}) 
 		return items
 	}
 }
+
 func (p *workPool) getProcessorFunctor(done <-chan struct{}, items <-chan *Task, workerId int) <-chan *Task {
 	packages := make(chan *Task)
 	go func() {
@@ -136,90 +163,4 @@ func (p *workPool) getProcessorFunctor(done <-chan struct{}, items <-chan *Task,
 
 func (p *workPool) Wait() {
 
-}
-
-// Task struct for NewWorkPool
-type Task struct {
-	Job      JobIndexed
-	subIndex int
-	args     []interface{}
-	onEnd    OnEndFunc
-	result   Result
-	err      error
-}
-
-// ToTask wrap Task with JobIndexed struct and args
-func ToTask(job JobIndexed, args ...interface{}) *Task {
-	return &Task{
-		Job:      job,
-		subIndex: 0,
-		args:     args,
-		onEnd:    nil,
-		result:   nil,
-		err:      nil,
-	}
-}
-
-// ToTaskN wrap Task with JobIndexed struct and args, and OnEndFunc
-func ToTaskN(onEnd OnEndFunc, job JobIndexed, args ...interface{}) *Task {
-	return &Task{
-		Job:      job,
-		subIndex: 0,
-		args:     args,
-		onEnd:    onEnd,
-		result:   nil,
-		err:      nil,
-	}
-}
-
-func merge(done <-chan struct{}, channels ...<-chan *Task) <-chan *Task {
-	var wg sync.WaitGroup
-
-	wg.Add(len(channels))
-	outgoingJobs := make(chan *Task)
-	multiplex := func(c <-chan *Task) {
-		defer wg.Done()
-		for i := range c {
-			select {
-			case <-done:
-				return
-			case outgoingJobs <- i:
-			}
-		}
-	}
-	for _, c := range channels {
-		go multiplex(c)
-	}
-	go func() {
-		wg.Wait()
-		close(outgoingJobs)
-	}()
-	return outgoingJobs
-}
-
-func prepare(done <-chan struct{}) <-chan *Task {
-	items := make(chan *Task)
-	itemsToShip := []*Task{
-		// {0, "Shirt", 1 * time.Second},
-		// {1, "Legos", 1 * time.Second},
-		// {2, "TV", 5 * time.Second},
-		// {3, "Bananas", 2 * time.Second},
-		// {4, "Hat", 1 * time.Second},
-		// {5, "Phone", 2 * time.Second},
-		// {6, "Plates", 3 * time.Second},
-		// {7, "Computer", 5 * time.Second},
-		// {8, "Pint Glass", 3 * time.Second},
-		// {9, "Watch", 2 * time.Second},
-	}
-	go func() {
-		for _, item := range itemsToShip {
-			select {
-			case <-done:
-				return
-			case items <- item:
-			}
-		}
-		close(items)
-	}()
-	return items
 }

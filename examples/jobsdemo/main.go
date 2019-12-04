@@ -18,6 +18,31 @@ func main() {
 
 	testPool(pool)
 	testSimpleJob(pool)
+
+	testWorkPool()
+}
+
+func testWorkPool() {
+	pool := jobs.NewWorkPool(10)
+	defer pool.Wait()
+	
+	generator := func(args ...interface{}) chan *jobs.Task {
+		ch := make(chan *jobs.Task)
+		count := args[0].(int)
+		go func() {
+			for i := 0; i < count; i++ {
+				job := newJob(i)
+				fmt.Printf("   -> new job #%d put\n", i)
+				ch <- jobs.ToTask(job, i+1, i+2, i+3)
+			}
+			close(ch)
+		}()
+		return ch
+	}
+
+	pool.OnComplete(func(numProcessed int) {
+		fmt.Printf("processed %d tasks\n", numProcessed)
+	}).Run(generator, 30)
 }
 
 func testSimpleJob(pool jobs.Scheduler) {
