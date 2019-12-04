@@ -118,7 +118,7 @@ import (
 )
 ```
 
-For more information pls refer to [examples/jobsdemo/main.go](https://github.com/hedzr/pools/blob/master/examples/jobsdemo/main.go) (not yet):
+For more information pls refer to [examples/jobsdemo/main.go](https://github.com/hedzr/pools/blob/master/examples/jobsdemo/main.go):
 
 ```go
 func testEntry(){
@@ -195,6 +195,7 @@ func testWorkPool() {
 
 ```
 
+For more information pls refer to [examples/jobsdemo/main.go](https://github.com/hedzr/pools/blob/master/examples/jobsdemo/main.go).
 
 
 
