@@ -40,30 +40,6 @@ func addE(errs ...error) error {
 	return addE(errs[1:]...)
 }
 
-// func NewEE(err error) error {
-// 	if e, ok := err.(*ExtErr); ok {
-// 		return &ExtErr{innerEE: e}
-// 	}
-// 	return &ExtErr{innerErr: err}
-// }
-// 
-// func NewEEM(msg string, err error) error {
-// 	if e, ok := err.(*ExtErr); ok {
-// 		return &ExtErr{msg: msg, innerEE: e}
-// 	}
-// 	return &ExtErr{msg: msg, innerErr: err}
-// }
-// 
-// func NewEEE(err, outerErr error) error {
-// 	e := &ExtErr{innerErr: outerErr, innerEE: &ExtErr{innerErr: err}}
-// 	return e
-// }
-// 
-// func NewEEEM(msg string, err, outerErr error) error {
-// 	e := &ExtErr{msg: msg, innerErr: outerErr, innerEE: &ExtErr{innerErr: err}}
-// 	return e
-// }
-
 type ExtErr struct {
 	innerEE  *ExtErr
 	innerErr error
