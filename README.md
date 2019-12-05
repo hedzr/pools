@@ -106,9 +106,6 @@ But also `WithBlockIfCantBorrow(true)` can block at `Borrow()` till any connecti
 
 ### 2. Jobs Scheduler
 
-- *'jobs/Scheduler'*
-
-TODO, WIP
 
 #### import
 
