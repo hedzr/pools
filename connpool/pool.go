@@ -54,7 +54,7 @@ type poolZ struct {
 }
 
 func (p *poolZ) Close() (err error) {
-	if atomic.CompareAndSwapInt32(&r.exited, 0, 1) {
+	if atomic.CompareAndSwapInt32(&p.exited, 0, 1) {
 		close(p.done)
 	}
 

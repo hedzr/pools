@@ -44,7 +44,7 @@ type serverImpl struct {
 }
 
 func (s *serverImpl) Close() (err error) {
-	if atomic.CompareAndSwapInt32(&r.exited, 0, 1) {
+	if atomic.CompareAndSwapInt32(&s.exited, 0, 1) {
 		s.exitingFlag = true
 
 		close(s.done)

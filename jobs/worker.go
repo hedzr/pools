@@ -3,7 +3,7 @@
 package jobs
 
 import (
-	"github.com/hedzr/pools/exterr"
+	"github.com/hedzr/errors"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -71,7 +71,7 @@ func (w *workerZ) runJob(jtb *jobTaskBlock) {
 		if e := recover(); e != nil {
 			log.Println(e)
 			if e1, ok := e.(error); ok {
-				err = exterr.NewError(e1, err)
+				err = errors.NewWithError(e1, err)
 			}
 		}
 		jtb.onEnd(res, err, jtb.job, jtb.args...)

@@ -138,7 +138,7 @@ type clientSample struct {
 type ClientSampleOpt func(*clientSample)
 
 func (c *clientSample) Close() (err error) {
-	if atomic.CompareAndSwapInt32(&r.exited, 0, 1) {
+	if atomic.CompareAndSwapInt32(&c.exited, 0, 1) {
 		close(c.doneCh)
 
 		c.conn.Close()
