@@ -17,7 +17,12 @@ The generic connection pool and task pool for Golang.
 - v1.0.x preview versions
 - v0.9.x pre-released
 
+
+
+
+
 ## Pools
+
 ### 1. Connection Pool
 
 #### import
@@ -134,7 +139,7 @@ func testEntry(){
 	// pool.Pause()
 	// pool.Resume()
 
-	pool.WaitForAllJobs()
+	pool.WaitForIdle()
 }
 
 

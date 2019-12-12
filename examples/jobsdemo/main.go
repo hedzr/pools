@@ -50,7 +50,7 @@ func testSimpleJob(pool jobs.Scheduler) {
 	start := time.Now()
 	numTasks := 50
 	defer func() {
-		pool.WaitForAllJobs()
+		pool.WaitForIdle()
 		fmt.Printf("Took %fs to ship %d jobs with %v times.\n", time.Since(start).Seconds(), numTasks, simpleJobCounter)
 	}()
 
@@ -70,7 +70,7 @@ func testPool(pool jobs.Scheduler) {
 	start := time.Now()
 	numTasks := 100
 	defer func() {
-		pool.WaitForAllJobs()
+		pool.WaitForIdle()
 		fmt.Printf("Took %fs to ship %d jobs with %v times.\n", time.Since(start).Seconds(), numTasks, jobCounter)
 	}()
 

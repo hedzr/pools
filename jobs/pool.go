@@ -30,8 +30,8 @@ type (
 		// Schedule puts a job 'copies' copies into a internal queue to wait for a worker ready to load it.
 		ScheduleN(job JobIndexed, copies int, args ...interface{})
 
-		// WaitForAllJobs waits for all scheduled jobs done
-		WaitForAllJobs()
+		// WaitForIdle waits for all scheduled jobs done
+		WaitForIdle()
 	}
 
 	// xWorker is worker,
@@ -210,6 +210,6 @@ func (p *poolZ) doOnEnd(result Result, err error, jobSrc JobIndexed, argsSrc ...
 	return
 }
 
-func (p *poolZ) WaitForAllJobs() {
+func (p *poolZ) WaitForIdle() {
 	p.wgForJobs.Wait()
 }

@@ -8,7 +8,7 @@ const (
 	// AppName const
 	AppName = "pools"
 	// Version const
-	Version = "1.0.0"
+	Version = "1.0.1"
 	// VersionInt const
-	VersionInt = 0x010000
+	VersionInt = 0x010001
 )
