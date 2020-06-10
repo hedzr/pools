@@ -102,7 +102,7 @@ func (c *clientSample) Tick(tick time.Time) (err error) {
 
 #### `WithBlockIfCantBorrow(b)`
 
-Generally the pool might return nil for `Borrow()` if all connections were borrowed.
+Generally the pool might return nil for `Borrow()` if all connections in pool had been borrowed.
 
 But also `WithBlockIfCantBorrow(true)` can block at `Borrow()` till any connection returned by `Return()`.
 
@@ -167,7 +167,8 @@ func (j *job1) Run(workerIndex int, args ...interface{}) (res jobs.Result, err e
 
 ### 3. Work-pool
 
-Work-pool is just like jobs scheduler but using a generator to feed the tasks.
+Work-pool is a jobs scheduler but using a generator to feed the tasks.
+
 For example:
 
 ```go
