@@ -1,5 +1,6 @@
 // Copyright © 2019 Hedzr Yeh.
 
+// Package jobs provides a worker scheduler to manage the job slices
 package jobs
 
 import (
@@ -152,7 +153,7 @@ func (p *poolZ) Close() (err error) {
 	if err = p.close(); err != nil {
 		log.Printf("pool close failed: %v", err)
 	}
-	<-p.closed
+	close(p.closed)
 	return
 }
 
@@ -160,7 +161,7 @@ func (p *poolZ) close() (err error) {
 	if atomic.CompareAndSwapInt32(&p.exited, 0, 1) {
 		close(p.done)
 
-		p.WaitForAllJobs()
+		// p.WaitForIdle()
 		for _, w := range p.workers {
 			if err := w.Close(); err != nil {
 				log.Printf("close worker failed: %v", err)

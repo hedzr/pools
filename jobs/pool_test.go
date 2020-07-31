@@ -26,7 +26,7 @@ func TestPool(t *testing.T) {
 	pool.Pause()
 	pool.Resume()
 
-	pool.WaitForAllJobs()
+	pool.WaitForIdle()
 }
 
 func newJob(i int) jobs.JobIndexed {

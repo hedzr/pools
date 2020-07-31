@@ -1,3 +1,4 @@
+// Package connpool provides a pool fitting for tcp/udp connections
 package connpool
 
 import (
