@@ -62,7 +62,7 @@ func (w *ww) Close() (err error) {
 }
 
 func (w *ww) open() (err error) {
-	w.conn, err = net.Dial("tcp", "163.com:80")
+	w.conn, err = net.Dial("tcp", "microsoft.com:80")
 	return
 }
 
