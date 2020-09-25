@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
+func dummyOnEndCB(result jobs.Result, err error, job jobs.JobIndexed, args ...interface{}) {
+	return
+}
+
 func TestPool(t *testing.T) {
-	pool := jobs.New(30, jobs.WithOnEndCallback(func(result jobs.Result, err error, job jobs.JobIndexed, args ...interface{}) {
-		return
-	}))
+	pool := jobs.New(30, jobs.WithOnEndCallback(dummyOnEndCB))
 	defer pool.CloseAndWait()
 
 	for i := 0; i < 100; i++ {

@@ -102,8 +102,8 @@ type job1 struct {
 func (j *job1) Run(workerIndex, subIndex int, args ...interface{}) (res jobs.Result, err error) {
 	start := time.Now()
 	atomic.AddInt32(&jobCounter, 1)
-	time.Sleep(time.Duration(100+rand.Intn(1500)) * time.Millisecond)
-	fmt.Printf("Task #%v [worker #%v]: args = %v, time = %v ms\n", j.taskIndex, workerIndex, args, time.Now().Sub(start).Milliseconds())
+	time.Sleep(time.Duration(100+rand.Intn(1500)) * time.Second / 1000)
+	fmt.Printf("Task #%v [worker #%v]: args = %v, time = %v s\n", j.taskIndex, workerIndex, args, time.Now().Sub(start).Seconds())
 	return
 }
 
@@ -117,8 +117,8 @@ type jobSimple struct {
 func (j *jobSimple) Run(args ...interface{}) {
 	start := time.Now()
 	atomic.AddInt32(&simpleJobCounter, 1)
-	time.Sleep(time.Duration(100+rand.Intn(3700)) * time.Millisecond)
-	fmt.Printf("Task #?: args = %v, time = %v ms\n", args, time.Now().Sub(start).Milliseconds())
+	time.Sleep(time.Duration(100+rand.Intn(3700)) * time.Second / 1000)
+	fmt.Printf("Task #?: args = %v, time = %v s\n", args, time.Now().Sub(start).Seconds())
 	return
 }
 
