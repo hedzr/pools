@@ -5,8 +5,8 @@ package server
 import (
 	"bufio"
 	"fmt"
+	"github.com/hedzr/log"
 	"io"
-	"log"
 	"net"
 	"os"
 	"sync/atomic"
@@ -85,7 +85,7 @@ func (s *serverImpl) handleRequest(conn net.Conn, tick time.Time, done chan stru
 			if err == io.EOF {
 				// log.Printf("conn(from: %v) read i/o eof found. closing ", conn.RemoteAddr())
 			} else {
-				log.Println("Error reading: ", err)
+				log.Printf("error reading: %v", err)
 			}
 			return
 		}

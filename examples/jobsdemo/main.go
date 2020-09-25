@@ -25,7 +25,7 @@ func main() {
 func testWorkPool() {
 	pool := jobs.NewWorkPool(10)
 	defer pool.Wait()
-	
+
 	generator := func(args ...interface{}) chan *jobs.Task {
 		ch := make(chan *jobs.Task)
 		count := args[0].(int)

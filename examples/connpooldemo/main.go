@@ -5,11 +5,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/hedzr/log"
 	"github.com/hedzr/pools/connpool"
 	"github.com/hedzr/pools/examples/connpooldemo/server"
 	"github.com/hedzr/pools/examples/tool"
 	"io"
-	"log"
 	"math/rand"
 	"net"
 	"strings"

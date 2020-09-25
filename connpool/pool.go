@@ -2,8 +2,8 @@
 package connpool
 
 import (
+	"github.com/hedzr/log"
 	"io"
-	"log"
 	"sync"
 	"sync/atomic"
 	"time"
