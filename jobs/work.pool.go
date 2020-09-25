@@ -11,6 +11,7 @@ type (
 	WorkPool interface {
 		OnComplete(onComplete func(numProcessed int)) WorkPool
 		Run(generator func(args ...interface{}) chan *Task, args ...interface{})
+		Wait()
 	}
 
 	// WorkPoolOpt for WorkPool
@@ -18,7 +19,7 @@ type (
 )
 
 // NewWorkPool new a work-pool object
-func NewWorkPool(size int, opts ...WorkPoolOpt) *workPool {
+func NewWorkPool(size int, opts ...WorkPoolOpt) WorkPool {
 	return newWorkPool(size, opts...)
 }
 
@@ -150,7 +151,7 @@ func (p *workPool) getDefaultPrepareFunctor(generator func(args ...interface{}) 
 	}
 }
 
-func (p *workPool) getProcessorFunctor(done <-chan struct{}, items <-chan *Task, workerId int) <-chan *Task {
+func (p *workPool) getProcessorFunctor(done <-chan struct{}, items <-chan *Task, workerID int) <-chan *Task {
 	packages := make(chan *Task)
 	go func() {
 		for item := range items {
@@ -158,7 +159,7 @@ func (p *workPool) getProcessorFunctor(done <-chan struct{}, items <-chan *Task,
 			case <-done:
 				return
 			case packages <- item:
-				item.result, item.err = item.Job.Run(workerId, item.subIndex, item.args...)
+				item.result, item.err = item.Job.Run(workerID, item.subIndex, item.args...)
 				if item.onEnd != nil {
 					item.onEnd(item.result, item.err, item.Job, item.args...)
 				}

@@ -4,7 +4,7 @@
 package jobs
 
 import (
-	"log"
+	"github.com/hedzr/log"
 	"sync"
 	"sync/atomic"
 )
@@ -139,7 +139,7 @@ func (p *poolZ) run() {
 		case <-p.done:
 			p.wgForWorkers.Wait() // waiting for all workers shutting down normally
 			log.Printf("poolZ waiting done. CLOSED.")
-			close(p.closed)
+			// close(p.closed)
 			return
 		}
 	}

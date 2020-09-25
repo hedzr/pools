@@ -3,8 +3,8 @@
 package jobs
 
 import (
-	"github.com/hedzr/errors"
-	"log"
+	"github.com/hedzr/log"
+	"gopkg.in/hedzr/errors.v2"
 	"sync"
 	"sync/atomic"
 )
@@ -69,9 +69,11 @@ func (w *workerZ) runJob(jtb *jobTaskBlock) {
 
 	defer func() {
 		if e := recover(); e != nil {
-			log.Println(e)
+			log.Errorf("job-errors: %v", e)
 			if e1, ok := e.(error); ok {
-				err = errors.NewWithError(e1, err)
+				ec := errors.NewContainer("job-errors")
+				ec.Attach(e1, err)
+				err = ec.Error()
 			}
 		}
 		jtb.onEnd(res, err, jtb.job, jtb.args...)
