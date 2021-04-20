@@ -28,7 +28,7 @@ type (
 
 		// Schedule puts a job into a internal queue to wait for a worker ready to load it.
 		Schedule(job JobIndexed, args ...interface{})
-		// Schedule puts a job 'copies' copies into a internal queue to wait for a worker ready to load it.
+		// ScheduleN puts a job 'copies' copies into a internal queue to wait for a worker ready to load it.
 		ScheduleN(job JobIndexed, copies int, args ...interface{})
 
 		// WaitForIdle waits for all scheduled jobs done
@@ -50,6 +50,9 @@ type (
 	Job interface {
 		Run(args ...interface{}) (res Result, err error)
 	}
+
+	// JobFunc is a callback
+	JobFunc func(workerIndex, subIndex int, args ...interface{}) (res Result, err error)
 
 	// JobIndexed is job
 	JobIndexed interface {
@@ -87,7 +90,18 @@ func WithOnEndCallback(onEnd OnEndFunc) Opt {
 }
 
 // New return a job scheduler object instance.
-// Closing it if you never need it any more
+// Closing it if you never need it any more.
+//
+// Example: Short
+//
+//     pool := jobs.New(32, jobs.WithOnEndCallback(jobs.DummyOnEndCallback)
+//     defer pool.Close()
+//     pool.Schedule(jobs.NewJobBuilder(func(workerIndex, subIndex int, args ...interface{}) (res Result, err error){
+//         return
+//     }), 1,2,3)
+//     pool.WaitForIdle()
+//
+//
 func New(initialSize int, opts ...Opt) (pool Scheduler) {
 	p := &poolZ{
 		capacity:    initialSize,
@@ -111,6 +125,26 @@ func New(initialSize int, opts ...Opt) (pool Scheduler) {
 	go p.run()
 
 	pool = p
+	return
+}
+
+// DummyOnEndCallback is a placeholder with nothing to do
+func DummyOnEndCallback(result Result, err error, job JobIndexed, args ...interface{}) {
+	return
+}
+
+type jobBuilder struct {
+	cb JobFunc
+}
+
+func NewJobBuilder(cb JobFunc) *jobBuilder {
+	return &jobBuilder{cb: cb}
+}
+
+func (j *jobBuilder) Run(workerIndex, subIndex int, args ...interface{}) (res Result, err error) {
+	if j.cb != nil {
+		res, err = j.cb(workerIndex, subIndex, args...)
+	}
 	return
 }
 
@@ -146,6 +180,7 @@ func (p *poolZ) run() {
 }
 
 func (p *poolZ) CloseAndWait() {
+	p.WaitForIdle()
 	_ = p.Close()
 }
 
