@@ -25,17 +25,11 @@ The generic connection pool and task pool for Golang.
 
 ### 1. Connection Pool
 
-#### import
-
-```go
-import (
-  "github.com/hedzr/pools/connpool"
-)
-```
-
 For more information pls refer to [examples/connpooldemo/main.go](https://github.com/hedzr/pools/blob/master/examples/connpooldemo/main.go):
 
 ```go
+import "github.com/hedzr/pools/connpool"
+
     pool := connpool.New(*poolSize,
         connpool.WithWorkerDialer(newWorkerWithOpts(WithClientKeepAliveTimeout(*keepAliveTimeout))),
         connpool.WithKeepAliveInterval(*keepAliveTimeout),
@@ -114,20 +108,22 @@ But also `WithBlockIfCantBorrow(true)` can block at `Borrow()` till any connecti
 
 #### import
 
-```go
-import (
-  "github.com/hedzr/pools/jobs"
-)
-```
-
 For more information pls refer to [examples/jobsdemo/main.go](https://github.com/hedzr/pools/blob/master/examples/jobsdemo/main.go):
 
 ```go
+package test
+import (
+	"fmt"
+	"github.com/hedzr/pools/jobs"
+	"math/rand"
+	"time"
+)
 func testEntry(){
 	pool := jobs.New(30, jobs.WithOnEndCallback(func(result jobs.Result, err error, job jobs.Job, args ...interface{}) {
+		// onEndCallback here
 		return
 	}))
-	defer pool.CloseAndWait()
+	defer pool.Close()
 
 	for i := 0; i < 100; i++ {
 		pool.Schedule(newJob(i), i+1, i+2, i+3)
@@ -161,9 +157,23 @@ func (j *job1) Run(workerIndex int, args ...interface{}) (res jobs.Result, err e
 	time.Sleep(time.Duration(2+rand.Intn(2)) * time.Second)
 	return
 }
-
 ```
 
+#### 2.1 Simple version
+
+The above codes can be simplified:
+
+```go
+package test
+import "github.com/hedzr/pools/jobs"
+func testEntry(){
+	pool := jobs.New(32, jobs.WithOnEndCallback(jobs.DummyOnEndCallback))
+     defer pool.CloseAndWait()
+     pool.Schedule(jobs.NewJobBuilder(func(workerIndex, subIndex int, args ...interface{}) (res jobs.Result, err error){
+         return
+     }), 1,2,3)
+}
+```
 
 ### 3. Work-pool
 
@@ -172,7 +182,8 @@ Work-pool is a jobs scheduler but using a generator to feed the tasks.
 For example:
 
 ```go
-
+package test
+import "github.com/hedzr/pools/jobs"
 func testWorkPool() {
 	pool := jobs.NewWorkPool(10)
 	defer pool.Wait()
@@ -193,7 +204,9 @@ func testWorkPool() {
 
 	pool.OnComplete(func(numProcessed int) {
 		fmt.Printf("processed %d tasks\n", numProcessed)
-	}).Run(generator, 30)
+	})
+	
+	pool.Run(generator, 30)
 }
 
 ```
